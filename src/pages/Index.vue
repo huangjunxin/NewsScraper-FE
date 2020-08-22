@@ -212,6 +212,19 @@ export default {
         this.fetcherListAccepted = []
       }
     }
+  },
+  mounted () {
+    this.$http.get('/function/listAllNews', {
+      params: {
+      }
+    })
+      .then(res => {
+        if (res.data.code === -1) {
+          console.error(res.data.data.msg)
+        } else {
+          this.fetcherListOptions = res.data
+        }
+      })
   }
 }
 </script>

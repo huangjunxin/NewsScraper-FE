@@ -5,6 +5,10 @@ import routes from './routes'
 
 Vue.use(VueRouter)
 
+// 全局 axios
+import instance from '../utils/http'
+Vue.prototype.$http = instance
+
 /*
  * If not building with SSR mode, you can
  * directly export the Router instantiation;
