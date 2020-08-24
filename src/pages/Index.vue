@@ -38,7 +38,8 @@
               <q-icon name="close" @click="keywords = ''" class="cursor-pointer" />
             </template>
           </q-input>
-          <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋結果時間限制" />
+          <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋文章的時間範圍" />
+          <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Concurrency 並發數 注：數值越高越耗費系統資源" />
           <div>
             <q-btn label="Submit" type="submit" color="primary" :disable="isSubmitDisabled"/>
             <q-ajax-bar
@@ -79,6 +80,10 @@ export default {
       timeLimitOptions: [
         'Any', 'Day', 'Week', 'Year'
       ],
+      concurrencyModel: null,
+      concurrencyOptions: [
+        1, 2, 3, 4, 5
+      ],
       isSubmitDisabled: false,
       isResultUrlsShow: false,
       resultUrlsData: [],
@@ -106,7 +111,8 @@ export default {
         }
       ],
       isFetchJobStarted: false,
-      fetchJobQueue: {}
+      fetchJobQueue: [],
+      rowCnt: 0
     }
   },
   methods: {
@@ -168,59 +174,66 @@ export default {
     async fetchJob () {
       console.info('[methods][fetchJob]')
       this.isFetchJobStarted = true
-      while (this.isFetchJobStarted) {
-        // 當任務隊列數量少於5時，新增一個分發任務
-        if (Object.keys(this.fetchJobQueue).length < 5) {
-          for (const row of this.resultUrlsData) {
-            if (row.status === 'waiting') {
-              // 分發任務
-              await this.$http.post('/fetchJob', JSON.stringify({
-                url: row['link-href'],
-                newsName: row.newsName
-              }))
+      // 等待一秒
+      setInterval(() => {
+        setTimeout(() => {
+          console.log('Wait a second')
+          // 當任務隊列數量少於concurrencyModel時，且所有任務都未遍歷過，新增一個分發任務
+          if (this.fetchJobQueue.length < this.concurrencyModel && this.rowCnt !== this.resultUrlsData.length) {
+            this.rowCnt = 0
+            for (const row of this.resultUrlsData) {
+              // 當任務隊列數量滿5時，提前退出循環
+              if (this.fetchJobQueue.length === this.concurrencyModel) {
+                break
+              }
+              this.rowCnt++
+              if (row.status === 'waiting') {
+                // 分發任務
+                this.$http.post('/fetchJob', {
+                  url: row['link-href'],
+                  newsName: row.newsName
+                })
+                  .then(res => {
+                    if (res.data.code === -1) {
+                      console.error(res.data.data.msg)
+                    } else {
+                    }
+                  })
+                // 更改當前任務在列表的顯示狀態
+                row.status = 'running'
+                this.fetchJobQueue.push(row['link-href'])
+              }
+            }
+          } else if (this.fetchJobQueue.length === this.concurrencyModel) {
+            // 當任務隊列數量等於5時，每隔一秒發送請求更新狀態
+            for (const item of this.fetchJobQueue) {
+              this.$http.get('/statusJob', {
+                params: {
+                  url: item
+                }
+              })
                 .then(res => {
-                  if (res.data.code === -1) {
-                    console.error(res.data.data.msg)
-                  } else {
-                    // 更改當前任務在列表的顯示狀態
-                    row.status = 'running'
-                    this.fetchJobQueue[row['link-href']] = row.status
+                  // 若得到返回值為完成或失敗，則更新running隊列
+                  if (res.data.status === 'completed' || res.data.status === 'failed') {
+                    const index = this.fetchJobQueue.indexOf(item)
+                    this.fetchJobQueue.splice(index, 1)
+                    for (const row of this.resultUrlsData) {
+                      if (item === row['link-href']) {
+                        row.status = res.data.status
+                      }
+                    }
                   }
                 })
             }
           }
-        } else if (Object.keys(this.fetchJobQueue).length === 5) {
-          // 當任務隊列數量等於5時，每隔一秒發送請求更新狀態
-          for (const item in this.fetchJobQueue) {
-            await this.$http.get('/statusJob', {
-              params: {
-                url: item
-              }
-            })
-              .then(res => {
-                if (res.data.code === -1) {
-                  console.error(res.data.data.msg)
-                } else {
-                  if (res.status === 'completed') {
-                    delete this.fetchJobQueue[item]
-                    for (const row of this.resultUrlsData) {
-                      if (row.url === item.toString()) {
-                        row.status = res.status
-                      }
-                    }
-                  }
-                }
-              })
-          }
-          // 等待一秒
-          setTimeout(() => {
-            console.log('Wait a second')
-          }, 1000)
-        }
-      }
+        }, 0)
+      }, 5000)
     }
   },
   mounted () {
+    // 仅调试时启用
+    window.vue = this
+
     const bar = this.$refs.bar
     bar.start()
     this.$http.get('/function/listAllNews', {
