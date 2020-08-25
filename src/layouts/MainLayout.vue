@@ -10,7 +10,7 @@
           <q-route-tab name="index" label="Home Page" to="/" exact />
           <q-route-tab name="storage" label="Storage" to="/storage" tag="a" target="_blank" exact />
         </q-tabs>
-        <div>v0.1.7 Alpha</div>
+        <div>v0.1.8 Alpha</div>
       </q-toolbar>
     </q-header>
 

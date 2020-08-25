@@ -81,7 +81,6 @@
 
 <script>
 import { exportFile } from 'quasar'
-
 // 格式化Csv值
 const wrapCsvValue = (val, formatFn) => {
   let formatted = formatFn !== undefined ? formatFn(val) : val
@@ -189,8 +188,11 @@ export default {
         )).join(','))
       ).join('\r\n')
 
+      const today = new Date()
+      const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
+
       const status = exportFile(
-        'table-export.csv',
+        `news-crawler-storage-export-${nowDateTime}.csv`,
         content,
         'text/csv'
       )

@@ -60,14 +60,31 @@
           :columns="resultUrlsColumns"
           row-key="link-href"
           :rows-per-page-options="[0]"
-          wrap-cells
-        />
+        >
+          <template v-slot:top-right>
+            <q-btn
+              color="primary"
+              icon-right="archive"
+              label="Export to csv"
+              no-caps
+              @click="exportTable"
+            />
+          </template>
+        </q-table>
       </div>
     </div>
   </q-page>
 </template>
 
 <script>
+import { exportFile } from 'quasar'
+// 格式化Csv值
+const wrapCsvValue = (val, formatFn) => {
+  let formatted = formatFn !== undefined ? formatFn(val) : val
+  formatted = formatted === undefined || formatted === null ? '' : String(formatted)
+  formatted = formatted.split('"').join('""')
+  return `"${formatted}"`
+}
 export default {
   data () {
     return {
@@ -180,6 +197,35 @@ export default {
         this.fetcherListAccepted = allList
       } else {
         this.fetcherListAccepted = []
+      }
+    },
+    // 導出函數
+    exportTable () {
+      console.info('[methods][exportTable]')
+      const content = [this.resultUrlsColumns.map(col => wrapCsvValue(col.label))].concat(
+        this.resultUrlsData.map(row => this.resultUrlsColumns.map(col => wrapCsvValue(
+          typeof col.field === 'function'
+            ? col.field(row)
+            : row[col.field === undefined ? col.name : col.field],
+          col.format
+        )).join(','))
+      ).join('\r\n')
+
+      const today = new Date()
+      const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
+
+      const status = exportFile(
+        `news-crawler-home-export-${nowDateTime}.csv`,
+        content,
+        'text/csv'
+      )
+
+      if (status !== true) {
+        this.$q.notify({
+          message: 'Browser denied file download...',
+          color: 'negative',
+          icon: 'warning'
+        })
       }
     },
     // Fetch Job 任務分發
