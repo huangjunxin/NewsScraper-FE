@@ -76,11 +76,11 @@ export default {
       isFetcherListExpanded: true,
       fetcherListAccepted: [],
       fetcherListOptions: [],
-      timeLimitModel: null,
+      timeLimitModel: 'Any',
       timeLimitOptions: [
         'Any', 'Day', 'Week', 'Year'
       ],
-      concurrencyModel: null,
+      concurrencyModel: 1,
       concurrencyOptions: [
         1, 2, 3, 4, 5
       ],
@@ -108,10 +108,18 @@ export default {
           align: 'left',
           field: 'snippet',
           sortable: true
+        },
+        {
+          name: 'url',
+          label: 'Url',
+          align: 'center',
+          field: 'link-href',
+          sortable: false
         }
       ],
       isFetchJobStarted: false,
       fetchJobQueue: [],
+      workingJobQueue: [],
       rowCnt: 0
     }
   },
@@ -120,9 +128,9 @@ export default {
     async onSubmit () {
       console.info('[methods][onSubmit]')
       const bar = this.$refs.bar
-      bar.start()
       this.isSubmitDisabled = true
       for (const oneNews of this.fetcherListAccepted) {
+        bar.start()
         await this.$http.get('/urlLists', {
           params: {
             news: oneNews,
@@ -131,24 +139,27 @@ export default {
           }
         })
           .then(res => {
+            bar.stop()
             if (res.data === '[]') {
               console.error('error')
             } else {
-              bar.stop()
               this.isFetcherListExpanded = false
-              this.isSubmitDisabled = false
               this.isResultUrlsShow = true
+              let cnt = 0
               for (const row of res.data) {
+                if (cnt++ > 2) break
                 const temp = {
                   ...row,
                   status: 'waiting',
                   newsName: oneNews
                 }
+                this.fetchJobQueue.push(temp)
                 this.resultUrlsData.push(temp)
               }
             }
           })
       }
+      this.isSubmitDisabled = false
       // 自動開始進行fetch工作
       if (this.resultUrlsData.length > 0) {
         if (!this.isFetchJobStarted) {
@@ -174,60 +185,72 @@ export default {
     async fetchJob () {
       console.info('[methods][fetchJob]')
       this.isFetchJobStarted = true
-      // 等待一秒
-      setInterval(() => {
-        setTimeout(() => {
-          console.log('Wait a second')
-          // 當任務隊列數量少於concurrencyModel時，且所有任務都未遍歷過，新增一個分發任務
-          if (this.fetchJobQueue.length < this.concurrencyModel && this.rowCnt !== this.resultUrlsData.length) {
-            this.rowCnt = 0
-            for (const row of this.resultUrlsData) {
-              // 當任務隊列數量滿5時，提前退出循環
-              if (this.fetchJobQueue.length === this.concurrencyModel) {
-                break
-              }
-              this.rowCnt++
-              if (row.status === 'waiting') {
-                // 分發任務
-                this.$http.post('/fetchJob', {
-                  url: row['link-href'],
-                  newsName: row.newsName
-                })
-                  .then(res => {
-                    if (res.data.code === -1) {
-                      console.error(res.data.data.msg)
-                    } else {
-                    }
-                  })
-                // 更改當前任務在列表的顯示狀態
-                row.status = 'running'
-                this.fetchJobQueue.push(row['link-href'])
-              }
-            }
-          } else if (this.fetchJobQueue.length === this.concurrencyModel) {
-            // 當任務隊列數量等於5時，每隔一秒發送請求更新狀態
-            for (const item of this.fetchJobQueue) {
-              this.$http.get('/statusJob', {
-                params: {
-                  url: item
-                }
-              })
-                .then(res => {
-                  // 若得到返回值為完成或失敗，則更新running隊列
-                  if (res.data.status === 'completed' || res.data.status === 'failed') {
-                    const index = this.fetchJobQueue.indexOf(item)
-                    this.fetchJobQueue.splice(index, 1)
-                    for (const row of this.resultUrlsData) {
-                      if (item === row['link-href']) {
-                        row.status = res.data.status
-                      }
-                    }
-                  }
-                })
-            }
+      this.dispatcher = setInterval(() => {
+        console.info('[method][pushingWorkingQueue]')
+        while (this.workingJobQueue.length < this.concurrencyModel && this.fetchJobQueue.length > 0 && this.isFetchJobStarted) {
+          this.workingJobQueue.push(this.fetchJobQueue.shift())
+        }
+        setTimeout(this.jobHandler, 2000)
+        if (this.fetchJobQueue.length <= 0 && this.workingJobQueue.length <= 0) {
+          this.isFetchJobStarted = false
+          clearInterval(this.dispatcher)
+        }
+      }, 3000)
+    },
+    jobHandler () {
+      console.info('[method][getStatus]')
+      if (this.isFetchJobStarted) {
+        const tempQueue = []
+        while (this.workingJobQueue.length > 0) {
+          const job = this.workingJobQueue.shift()
+          switch (job.status) {
+            case 'waiting':
+              this.postJob(job['link-href'], job.newsName)
+              job.status = 'running'
+              tempQueue.push(job)
+              break
+            case 'running':
+              job.status = 'checking'
+              this.checkStatus(job)
+              tempQueue.push(job)
+              break
+            case 'checking':
+              tempQueue.push(job)
+              break
+            default:
+              break
           }
-        }, 0)
-      }, 5000)
+        }
+        while (tempQueue.length > 0) {
+          this.workingJobQueue.push(tempQueue.pop())
+        }
+      }
+    },
+    async postJob (url, newsName) {
+      await this.$http.post('/fetchJob', {
+        url: url,
+        newsName: newsName
+      })
+        .then(res => {
+          if (res.data.code === -1) {
+            console.error(res.data.data.msg)
+          }
+        })
+    },
+    async checkStatus (job) {
+      await this.$http.get('/statusJob', {
+        params: {
+          url: job['link-href']
+        }
+      })
+        .then(res => {
+          // 若得到返回值為完成或失敗，則更新running隊列
+          if (res.data.status === 'completed' || res.data.status === 'failed') {
+            job.status = res.data.status
+          } else {
+            job.status = 'running'
+          }
+        })
     }
   },
   mounted () {
