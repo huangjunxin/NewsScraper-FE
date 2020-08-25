@@ -145,9 +145,10 @@ export default {
             } else {
               this.isFetcherListExpanded = false
               this.isResultUrlsShow = true
-              let cnt = 0
+              // 限制結果的debug option
+              // let cnt = 0
               for (const row of res.data) {
-                if (cnt++ > 2) break
+                // if (cnt++ > 2) break
                 const temp = {
                   ...row,
                   status: 'waiting',
@@ -190,12 +191,13 @@ export default {
         while (this.workingJobQueue.length < this.concurrencyModel && this.fetchJobQueue.length > 0 && this.isFetchJobStarted) {
           this.workingJobQueue.push(this.fetchJobQueue.shift())
         }
-        setTimeout(this.jobHandler, 2000)
         if (this.fetchJobQueue.length <= 0 && this.workingJobQueue.length <= 0) {
+          console.info('[method][fetchJob]: Fetching Done!')
           this.isFetchJobStarted = false
           clearInterval(this.dispatcher)
         }
-      }, 3000)
+        setTimeout(this.jobHandler, 3000)
+      }, 6000)
     },
     jobHandler () {
       console.info('[method][getStatus]')
