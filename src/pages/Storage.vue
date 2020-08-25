@@ -19,7 +19,7 @@
           </q-input>
           <q-input
             v-model="title"
-            label="Title 報道標題 可使用正則表達式"
+            label="Title 報道標題 可使用正則表達式「Regex Available」"
             placeholder=""
           >
             <template v-slot:append v-if="title.length !== 0">
@@ -28,7 +28,7 @@
           </q-input>
           <q-input
             v-model="content"
-            label="Content 報道正文 可使用正則表達式"
+            label="Content 報道正文 可使用正則表達式「Regex Available」"
             placeholder=""
           >
             <template v-slot:append v-if="content.length !== 0">
@@ -100,24 +100,10 @@ export default {
       resultData: [],
       resultColumns: [
         {
-          name: 'title',
-          label: 'Title',
-          align: 'left',
-          field: 'title',
-          sortable: true
-        },
-        {
           name: 'date',
           label: 'Date',
           align: 'left',
           field: 'date',
-          sortable: true
-        },
-        {
-          name: 'content',
-          label: 'Content',
-          align: 'left',
-          field: 'content',
           sortable: true
         },
         {
@@ -135,18 +121,32 @@ export default {
           sortable: true
         },
         {
-          name: 'url',
-          label: 'Url',
-          align: 'left',
-          field: 'url',
-          sortable: false
-        },
-        {
           name: 'description',
           label: 'Description',
           align: 'left',
           field: 'description',
           sortable: true
+        },
+        {
+          name: 'title',
+          label: 'Title',
+          align: 'left',
+          field: 'title',
+          sortable: true
+        },
+        {
+          name: 'content',
+          label: 'Content',
+          align: 'left',
+          field: 'content',
+          sortable: true
+        },
+        {
+          name: 'url',
+          label: 'Url',
+          align: 'left',
+          field: 'url',
+          sortable: false
         }
       ]
     }
