@@ -95,7 +95,7 @@ export default {
       fetcherListOptions: [],
       timeLimitModel: 'Any',
       timeLimitOptions: [
-        'Any', 'Day', 'Week', 'Year'
+        'Any', 'Day', 'Week','Month', 'Year'
       ],
       concurrencyModel: 1,
       concurrencyOptions: [
@@ -151,7 +151,7 @@ export default {
         await this.$http.get('/urlLists', {
           params: {
             news: oneNews,
-            keyword: this.keywords,
+            keyword: encodeURI('"') + this.keywords encodeURL('"'),
             timeLimit: this.timeLimitModel
           }
         })
