@@ -34,6 +34,11 @@
             label="Keyword 關鍵字"
             placeholder=""
           >
+          <q-input
+            v-model="resultLimit"
+            label="搜尋結果數"
+            placeholder=""
+          >
             <template v-slot:append v-if="keywords.length !== 0">
               <q-icon name="close" @click="keywords = ''" class="cursor-pointer" />
             </template>
@@ -89,13 +94,14 @@ export default {
   data () {
     return {
       keywords: '',
+      resultLimit: 0,
       isFetcherListAllSelect: false,
       isFetcherListExpanded: true,
       fetcherListAccepted: [],
       fetcherListOptions: [],
       timeLimitModel: 'Any',
       timeLimitOptions: [
-        'Any', 'Day', 'Week','Month', 'Year'
+        'Any', 'Day', 'Week', 'Month', 'Year'
       ],
       concurrencyModel: 1,
       concurrencyOptions: [
@@ -136,8 +142,7 @@ export default {
       ],
       isFetchJobStarted: false,
       fetchJobQueue: [],
-      workingJobQueue: [],
-      rowCnt: 0
+      workingJobQueue: []
     }
   },
   methods: {
@@ -151,7 +156,7 @@ export default {
         await this.$http.get('/urlLists', {
           params: {
             news: oneNews,
-            keyword: encodeURI('"') + this.keywords encodeURL('"'),
+            keyword: encodeURI('"') + this.keywords + encodeURI('"'),
             timeLimit: this.timeLimitModel
           }
         })
@@ -163,9 +168,9 @@ export default {
               this.isFetcherListExpanded = false
               this.isResultUrlsShow = true
               // 限制結果的debug option
-              // let cnt = 0
+              let cnt = 0
               for (const row of res.data) {
-                // if (cnt++ > 2) break
+                if (cnt++ >= this.resultLimit) break
                 const temp = {
                   ...row,
                   status: 'waiting',
