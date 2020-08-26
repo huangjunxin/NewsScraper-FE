@@ -34,15 +34,15 @@
             label="Keyword 關鍵字"
             placeholder=""
           >
-          <q-input
-            v-model="resultLimit"
-            label="搜尋結果數"
-            placeholder=""
-          >
             <template v-slot:append v-if="keywords.length !== 0">
               <q-icon name="close" @click="keywords = ''" class="cursor-pointer" />
             </template>
           </q-input>
+            <q-input
+              v-model="resultLimit"
+              label="搜尋結果數"
+              placeholder=""
+            > </q-input>
           <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋文章的時間範圍" />
           <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Concurrency 並發數 注：數值越高越耗費系統資源" />
           <div>
