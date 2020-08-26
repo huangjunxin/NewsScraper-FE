@@ -94,7 +94,7 @@ export default {
   data () {
     return {
       keywords: '',
-      resultLimit: 0,
+      resultLimit: 100,
       isFetcherListAllSelect: false,
       isFetcherListExpanded: true,
       fetcherListAccepted: [],
