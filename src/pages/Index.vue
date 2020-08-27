@@ -40,11 +40,12 @@
           </q-input>
             <q-input
               v-model="resultLimit"
-              label="搜尋結果數"
+              label="Search engine result limit 搜尋結果數限制"
               placeholder=""
             > </q-input>
           <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋文章的時間範圍" />
-          <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Concurrency 並發數 注：數值越高越耗費系統資源" />
+          <q-select v-model="engineModel" :options="engineOptions" label="Search Engine" />
+          <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Concurrency 並行工作數 注：數值越高越耗費系統資源" />
           <div>
             <q-btn label="Submit" type="submit" color="primary" :disable="isSubmitDisabled"/>
             <q-ajax-bar
@@ -105,7 +106,11 @@ export default {
       ],
       concurrencyModel: 1,
       concurrencyOptions: [
-        1, 2, 3, 4, 5
+        1, 2, 3, 5, 8, 10, 15, 20, 25, 30
+      ],
+      engineModel: 'bing',
+      engineOptions: [
+        'duckduckgo', 'bing'
       ],
       isSubmitDisabled: false,
       isResultUrlsShow: false,
@@ -156,8 +161,10 @@ export default {
         await this.$http.get('/urlLists', {
           params: {
             news: oneNews,
-            keyword: encodeURI('"') + this.keywords + encodeURI('"'),
-            timeLimit: this.timeLimitModel
+            keyword: this.keywords,
+            timeLimit: this.timeLimitModel,
+            resultLimit: this.resultLimit,
+            engine: this.engineModel
           }
         })
           .then(res => {
@@ -248,7 +255,7 @@ export default {
           clearInterval(this.dispatcher)
         }
         setTimeout(this.jobHandler, 3000)
-      }, 6000)
+      }, 4000)
     },
     jobHandler () {
       console.info('[method][getStatus]')
