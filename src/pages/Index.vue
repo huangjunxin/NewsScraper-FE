@@ -255,61 +255,71 @@ export default {
           clearInterval(this.dispatcher)
         }
         setTimeout(this.jobHandler, 3000)
-      }, 4000)
+      }, 5000)
     },
-    jobHandler () {
-      console.info('[method][getStatus]')
+    async jobHandler () {
+      console.info('[method][getStatus&postJob]')
       if (this.isFetchJobStarted) {
-        const tempQueue = []
-        while (this.workingJobQueue.length > 0) {
-          const job = this.workingJobQueue.shift()
-          switch (job.status) {
-            case 'waiting':
-              this.postJob(job['link-href'], job.newsName)
-              job.status = 'running'
-              tempQueue.push(job)
-              break
-            case 'running':
-              job.status = 'checking'
-              this.checkStatus(job)
-              tempQueue.push(job)
-              break
-            case 'checking':
-              tempQueue.push(job)
-              break
-            default:
-              break
+        const readyToPost = []
+        for (const working of this.workingJobQueue) {
+          if (working.status === 'waiting') {
+            working.status = 'running'
+            readyToPost.push(working)
           }
         }
-        while (tempQueue.length > 0) {
-          this.workingJobQueue.push(tempQueue.pop())
+        await this.postJob(readyToPost)
+        if (this.workingJobQueue.length > 0) {
+          this.checkStatus(this.workingJobQueue)
         }
       }
     },
-    async postJob (url, newsName) {
-      await this.$http.post('/fetchJob', {
-        url: url,
-        newsName: newsName
-      })
-        .then(res => {
-          if (res.data.code === -1) {
-            console.error(res.data.data.msg)
-          }
+    async postJob (jobs) {
+      const request = []
+      for (const job of jobs) {
+        request.push(job)
+      }
+      if (request.length > 0) {
+        await this.$http.post('/fetchJob', {
+          jobs: request
         })
+          .then(res => {
+            if (res.data.code === -1) {
+              console.error(res.data.data.msg)
+            }
+          })
+      }
     },
     async checkStatus (job) {
+      const query = []
+      for (const each of job) {
+        query.push(each['link-href'])
+        each.status = 'checking'
+      }
       await this.$http.get('/statusJob', {
         params: {
-          url: job['link-href']
+          url: query
         }
       })
         .then(res => {
           // 若得到返回值為完成或失敗，則更新running隊列
-          if (res.data.status === 'completed' || res.data.status === 'failed') {
-            job.status = res.data.status
-          } else {
-            job.status = 'running'
+          const data = res.data
+          for (const each of job) {
+            const eachStatus = data[each['link-href']]
+            const status = eachStatus.status
+            if (!status) {
+              continue
+            }
+            if (status === 'completed' || status === 'failed') {
+              each.status = status
+            } else if (status === 'undefined') {
+              each.status = 'failed'
+            } else {
+              each.status = 'running'
+            }
           }
+          this.workingJobQueue = this.workingJobQueue.filter((ele, _index, _arr) => {
+            return !(ele.status === 'completed' || ele.status === 'failed')
+          })
         })
     }
   },
