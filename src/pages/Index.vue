@@ -254,7 +254,7 @@ export default {
           this.isFetchJobStarted = false
           clearInterval(this.dispatcher)
         }
-        setTimeout(this.jobHandler, 3000)
+        setTimeout(this.jobHandler, 2000)
       }, 5000)
     },
     async jobHandler () {
