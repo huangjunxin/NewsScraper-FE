@@ -45,7 +45,7 @@
             > </q-input>
           <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋文章的時間範圍" />
           <q-select v-model="engineModel" :options="engineOptions" label="Search Engine" />
-          <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Concurrency 並行工作數 注：數值越高越耗費系統資源" />
+          <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Parallel Jobs 並行工作數 注：數值越高越耗費系統資源" />
           <div>
             <q-btn label="Submit" type="submit" color="primary" :disable="isSubmitDisabled"/>
             <q-ajax-bar
