@@ -295,7 +295,7 @@ export default {
         query.push(each['link-href'])
         each.status = 'checking'
       }
-      await this.$http.get('/statusJob', {
+      await this.$http.post('/fetchStatus', {
         params: {
           url: query
         }
@@ -311,7 +311,7 @@ export default {
             }
             if (status === 'completed' || status === 'failed') {
               each.status = status
-            } else if (status === 'undefined') {
+            } else if (status === 'notExist') {
               each.status = 'failed'
             } else {
               each.status = 'running'
