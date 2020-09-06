@@ -146,6 +146,37 @@ export default {
         }
       ],
       isFetchJobStarted: false,
+      // Service for checking result
+      searchResultChecker:
+        setInterval(async () => {
+          await this.$http.get('/urlLists')
+            .then(res => {
+              console.info(res.data)
+              if (res.data.length === 0) {
+                console.info('No Result')
+              } else {
+                this.isFetcherListExpanded = false
+                this.isResultUrlsShow = true
+                // 限制結果的debug option
+                let cnt = 0
+                for (const row of res.data) {
+                  if (cnt++ >= this.resultLimit) break
+                  const temp = {
+                    ...row,
+                    status: 'waiting'
+                  }
+                  this.fetchJobQueue.push(temp)
+                  this.resultUrlsData.push(temp)
+                }
+              }
+              // 自動開始進行fetch工作
+              if (this.resultUrlsData.length > 0) {
+                if (!this.isFetchJobStarted) {
+                  this.fetchJob()
+                }
+              }
+            })
+        }, 6000),
       fetchJobQueue: [],
       workingJobQueue: []
     }
@@ -158,7 +189,7 @@ export default {
       this.isSubmitDisabled = true
       for (const oneNews of this.fetcherListAccepted) {
         bar.start()
-        await this.$http.get('/urlLists', {
+        await this.$http.post('/urlLists', {
           params: {
             news: oneNews,
             keyword: this.keywords,
@@ -167,35 +198,11 @@ export default {
             engine: this.engineModel
           }
         })
-          .then(res => {
+          .then(ret => {
             bar.stop()
-            if (res.data === '[]') {
-              console.error('error')
-            } else {
-              this.isFetcherListExpanded = false
-              this.isResultUrlsShow = true
-              // 限制結果的debug option
-              let cnt = 0
-              for (const row of res.data) {
-                if (cnt++ >= this.resultLimit) break
-                const temp = {
-                  ...row,
-                  status: 'waiting',
-                  newsName: oneNews
-                }
-                this.fetchJobQueue.push(temp)
-                this.resultUrlsData.push(temp)
-              }
-            }
           })
       }
       this.isSubmitDisabled = false
-      // 自動開始進行fetch工作
-      if (this.resultUrlsData.length > 0) {
-        if (!this.isFetchJobStarted) {
-          this.fetchJob()
-        }
-      }
     },
     // Fetcher List 全選操作
     fetcherListAllSelect (value, evt) {
