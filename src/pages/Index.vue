@@ -151,12 +151,11 @@ export default {
         setInterval(async () => {
           await this.$http.get('/urlLists')
             .then(res => {
-              console.info(res.data)
+              this.isResultUrlsShow = true
               if (res.data.length === 0) {
                 console.info('No Result')
               } else {
                 this.isFetcherListExpanded = false
-                this.isResultUrlsShow = true
                 // 限制結果的debug option
                 let cnt = 0
                 for (const row of res.data) {
