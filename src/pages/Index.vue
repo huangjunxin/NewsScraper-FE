@@ -176,7 +176,9 @@ export default {
                 // 限制結果的debug option
                 let cnt = 0
                 for (const row of res.data) {
-                  if (cnt++ >= this.resultLimit) break
+                  if (cnt++ >= this.resultLimit && this.engineModel === 'duckduckgo') {
+                    break
+                  }
                   const temp = {
                     ...row,
                     status: 'waiting'
@@ -203,21 +205,23 @@ export default {
       console.info('[methods][onSubmit]')
       const bar = this.$refs.bar
       this.isSubmitDisabled = true
+      bar.start()
+      const payload = []
       for (const oneNews of this.fetcherListAccepted) {
-        bar.start()
-        await this.$http.post('/urlLists', {
-          params: {
-            news: oneNews,
-            keyword: this.keywords,
-            timeLimit: this.timeLimitModel,
-            resultLimit: this.resultLimit,
-            engine: this.engineModel
-          }
+        payload.push({
+          news: oneNews,
+          keyword: this.keywords,
+          timeLimit: this.timeLimitModel,
+          resultLimit: this.resultLimit,
+          engine: this.engineModel
         })
-          .then(ret => {
-            bar.stop()
-          })
       }
+      await this.$http.post('/urlLists', {
+        params: payload
+      })
+        .then(ret => {
+          bar.stop()
+        })
       this.isSubmitDisabled = false
     },
     // Fetcher List 全選操作
