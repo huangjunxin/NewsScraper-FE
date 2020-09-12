@@ -46,6 +46,16 @@
           <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋文章的時間範圍" />
           <q-select v-model="engineModel" :options="engineOptions" label="Search Engine" />
           <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Parallel Jobs 並行工作數 注：數值越高越耗費系統資源" />
+          <!-- status bar -->
+          <div v-if="isShowStatusBar" class="q-pa-md q-gutter-xs">
+            <div class="q-gutter-md row items-center">
+              <q-spinner-radio
+                color="green"
+                size="2.5em"
+              />
+              <div class="text-h6">{{statusBarContent}}</div>
+            </div>
+          </div>
           <div>
             <q-btn label="Submit" type="submit" color="primary" :disable="isSubmitDisabled"/>
             <q-ajax-bar
@@ -98,6 +108,8 @@ export default {
       resultLimit: 100,
       isFetcherListAllSelect: false,
       isFetcherListExpanded: true,
+      isShowStatusBar: false,
+      statusBarContent: 'loading',
       fetcherListAccepted: [],
       fetcherListOptions: [],
       timeLimitModel: 'Any',
@@ -149,8 +161,13 @@ export default {
       // Service for checking result
       searchResultChecker:
         setInterval(async () => {
+          this.statusBarContent = '正在從伺服器檢查結果隊列 Checking If Server Fetched Searched Result'
+          this.isShowStatusBar = true
           await this.$http.get('/urlLists')
             .then(res => {
+              setTimeout(() => {
+                this.isShowStatusBar = false
+              }, 2800)
               this.isResultUrlsShow = true
               if (res.data.length === 0) {
                 console.info('No Result')
