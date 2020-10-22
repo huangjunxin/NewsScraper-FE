@@ -59,10 +59,10 @@
       <div class="q-ma-md" v-if="isResultShow">
         <q-table
           title="Result Data"
+          dense
           :data="resultData"
           :columns="resultColumns"
           row-key="link-href"
-          :rows-per-page-options="[0]"
         >
           <template v-slot:top-right>
             <q-btn
