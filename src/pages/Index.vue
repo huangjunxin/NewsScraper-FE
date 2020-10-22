@@ -289,6 +289,7 @@ export default {
       if (this.isFetchJobStarted) {
         const readyToPost = []
         for (const working of this.workingJobQueue) {
+          if (working === 'null') continue
           if (working.status === 'waiting') {
             working.status = 'running'
             readyToPost.push(working)
@@ -332,13 +333,18 @@ export default {
           const data = res.data
           for (const each of job) {
             const eachStatus = data[each['link-href']]
-            const status = eachStatus.status
+            let status = ''
+            if (!eachStatus) {
+              status = 'failed'
+            } else {
+              status = eachStatus.status
+            }
             if (!status) {
               continue
             }
             if (status === 'completed' || status === 'failed') {
               each.status = status
-            } else if (status === 'notExist') {
+            } else if (status === 'null') {
               each.status = 'failed'
             } else {
               each.status = 'running'
