@@ -118,7 +118,7 @@ export default {
       ],
       concurrencyModel: 1,
       concurrencyOptions: [
-        1, 2, 3, 5, 8, 10, 15, 20, 25, 30
+        1, 5, 10, 15, 20, 25, 30, 50, 80
       ],
       engineModel: 'bing',
       engineOptions: [
@@ -170,7 +170,7 @@ export default {
               }, 2800)
               this.isResultUrlsShow = true
               if (res.data.length === 0) {
-                console.info('No Result')
+                console.info('[searchResultChecker]No Result')
               } else {
                 this.isFetcherListExpanded = false
                 // 限制結果的debug option
@@ -282,7 +282,7 @@ export default {
           clearInterval(this.dispatcher)
         }
         setTimeout(this.jobHandler, 2000)
-      }, 5000)
+      }, 3500)
     },
     async jobHandler () {
       console.info('[method][getStatus&postJob]')
