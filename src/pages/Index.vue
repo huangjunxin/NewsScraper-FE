@@ -281,8 +281,8 @@ export default {
           this.isFetchJobStarted = false
           clearInterval(this.dispatcher)
         }
-        setTimeout(this.jobHandler, 2000)
-      }, 3500)
+        setTimeout(this.jobHandler, 1000)
+      }, 2000)
     },
     async jobHandler () {
       console.info('[method][getStatus&postJob]')
