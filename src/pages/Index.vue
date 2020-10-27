@@ -46,16 +46,6 @@
           <q-select v-model="timeLimitModel" :options="timeLimitOptions" label="Time Limit 搜尋文章的時間範圍" />
           <q-select v-model="engineModel" :options="engineOptions" label="Search Engine" />
           <q-select v-model="concurrencyModel" :options="concurrencyOptions" label="Parallel Jobs 並行工作數 注：數值越高越耗費系統資源" />
-          <!-- status bar -->
-          <div v-if="isShowStatusBar" class="q-pa-md q-gutter-xs">
-            <div class="q-gutter-md row items-center">
-              <q-spinner-radio
-                color="green"
-                size="2.5em"
-              />
-              <div class="text-h6">{{statusBarContent}}</div>
-            </div>
-          </div>
           <div>
             <q-btn label="Submit" type="submit" color="primary" :disable="isSubmitDisabled"/>
             <q-ajax-bar
@@ -88,6 +78,16 @@
           </template>
         </q-table>
       </div>
+        <!-- status bar -->
+        <div v-if="isShowStatusBar" class="q-pa-md q-gutter-xs">
+          <div class="q-gutter-md row items-center">
+            <q-spinner-radio
+              color="green"
+              size="2.5em"
+            />
+            <div class="text-h6">{{statusBarContent}}</div>
+          </div>
+        </div>
     </div>
   </q-page>
 </template>
@@ -105,7 +105,7 @@ export default {
   data () {
     return {
       keywords: '',
-      resultLimit: 100,
+      resultLimit: 1000,
       isFetcherListAllSelect: false,
       isFetcherListExpanded: true,
       isShowStatusBar: false,
@@ -183,8 +183,15 @@ export default {
                     ...row,
                     status: 'waiting'
                   }
-                  this.fetchJobQueue.push(temp)
-                  this.resultUrlsData.push(temp)
+                  // remove duplicated
+                  if (this.resultUrlsData.findIndex(
+                    item => {
+                      return item['link-href'] === temp['link-href']
+                    }
+                  ) === -1) {
+                    this.resultUrlsData.push(temp)
+                    this.fetchJobQueue.push(temp)
+                  }
                 }
               }
               // 自動開始進行fetch工作
