@@ -199,11 +199,7 @@ export default {
       while (data.length > 0) {
         let content = []
         for (let i = 0; data.length > 0 && i < Math.floor(totalLength / this.outputlimit); ++i) { content.push(data.shift()) }
-        if (this.outputlimit === 0) {
-          content = header.concat(data).join('\r\n')
-        } else {
-          content = header.concat(content).join('\r\n')
-        }
+        content = header.concat(content).join('\r\n')
         const status = exportFile(
           `news-crawler-storage-export-${count++}-${nowDateTime}.csv`,
           content,
@@ -217,7 +213,6 @@ export default {
             icon: 'warning'
           })
         }
-        if (this.outputlimit === 0) { break }
       }
     }
   },
