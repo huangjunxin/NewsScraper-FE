@@ -192,12 +192,13 @@ export default {
           : row[col.field === undefined ? col.name : col.field],
         col.format
       )).join(','))
+      const totalLength = data.length
       const today = new Date()
       const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
       let count = 0
       while (data.length > 0) {
         let content = []
-        for (let i = 0; data.length > 0 && i < this.outputlimit; ++i) { content.push(data.shift()) }
+        for (let i = 0; data.length > 0 && i < Math.floor(totalLength / this.outputlimit); ++i) { content.push(data.shift()) }
         if (this.outputlimit === 0) {
           content = header.concat(data).join('\r\n')
         } else {
