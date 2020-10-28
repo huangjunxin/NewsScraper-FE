@@ -186,7 +186,7 @@ export default {
     // 導出函數
     exportTable () {
       const header = [this.resultColumns.map(col => wrapCsvValue(col.label))]
-      const content = this.resultData.map(row => this.resultColumns.map(col => wrapCsvValue(
+      const data = this.resultData.map(row => this.resultColumns.map(col => wrapCsvValue(
         typeof col.field === 'function'
           ? col.field(row)
           : row[col.field === undefined ? col.name : col.field],
@@ -194,24 +194,18 @@ export default {
       )).join(','))
       const today = new Date()
       const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
-      let i = 0
-      while (i < content.length) {
-        let cnt
-        if (+this.outputlimit) {
-          const tempArr = []
-          for (let index = i; index < i + (+this.outputlimit) && index < content.length; index++) {
-            tempArr.push(content[index])
-          }
-          i += +this.outputlimit
-          cnt = header.concat(tempArr).join('\r\n')
+      let count = 0
+      while (data.length > 0) {
+        let content = []
+        for (let i = 0; data.length > 0 && i < this.outputlimit; ++i) { content.push(data.shift()) }
+        if (this.outputlimit === 0) {
+          content = header.concat(data).join('\r\n')
         } else {
-          exportFile()
-          i = content.length
-          cnt = header.concat(content).join('\r\n')
+          content = header.concat(content).join('\r\n')
         }
         const status = exportFile(
-          `news-crawler-storage-export${i === 0 ? '' : Math.floor(i / this.outputlimit)}-${nowDateTime}.csv`,
-          cnt,
+          `news-crawler-storage-export-${count++}-${nowDateTime}.csv`,
+          content,
           'text/csv'
         )
 
@@ -222,6 +216,7 @@ export default {
             icon: 'warning'
           })
         }
+        if (this.outputlimit === 0) { break }
       }
     }
   },
