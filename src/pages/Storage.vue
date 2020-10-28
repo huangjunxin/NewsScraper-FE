@@ -65,6 +65,11 @@
           row-key="link-href"
         >
           <template v-slot:top-right>
+          <q-input
+            v-model="outputlimit"
+            label="導出條目限制 if 0 output all"
+            placeholder="0"
+          ></q-input>
             <q-btn
               color="primary"
               icon-right="archive"
@@ -95,6 +100,7 @@ export default {
       title: '',
       content: '',
       locale: '',
+      outputlimit: 0,
       isSubmitDisabled: false,
       isResultShow: false,
       resultData: [],
@@ -179,30 +185,43 @@ export default {
     },
     // 導出函數
     exportTable () {
-      const content = [this.resultColumns.map(col => wrapCsvValue(col.label))].concat(
-        this.resultData.map(row => this.resultColumns.map(col => wrapCsvValue(
-          typeof col.field === 'function'
-            ? col.field(row)
-            : row[col.field === undefined ? col.name : col.field],
-          col.format
-        )).join(','))
-      ).join('\r\n')
-
+      const header = [this.resultColumns.map(col => wrapCsvValue(col.label))]
+      const content = this.resultData.map(row => this.resultColumns.map(col => wrapCsvValue(
+        typeof col.field === 'function'
+          ? col.field(row)
+          : row[col.field === undefined ? col.name : col.field],
+        col.format
+      )).join(','))
       const today = new Date()
       const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
+      let i = 0
+      while (i < content.length) {
+        let cnt
+        if (+this.outputlimit) {
+          const tempArr = []
+          for (let index = i; index < i + (+this.outputlimit) && index < content.length; index++) {
+            tempArr.push(content[index])
+          }
+          i += +this.outputlimit
+          cnt = header.concat(tempArr).join('\r\n')
+        } else {
+          exportFile()
+          i = content.length
+          cnt = header.concat(content).join('\r\n')
+        }
+        const status = exportFile(
+          `news-crawler-storage-export${i === 0 ? '' : Math.floor(i / this.outputlimit)}-${nowDateTime}.csv`,
+          cnt,
+          'text/csv'
+        )
 
-      const status = exportFile(
-        `news-crawler-storage-export-${nowDateTime}.csv`,
-        content,
-        'text/csv'
-      )
-
-      if (status !== true) {
-        this.$q.notify({
-          message: 'Browser denied file download...',
-          color: 'negative',
-          icon: 'warning'
-        })
+        if (status !== true) {
+          this.$q.notify({
+            message: 'Browser denied file download...',
+            color: 'negative',
+            icon: 'warning'
+          })
+        }
       }
     }
   },
