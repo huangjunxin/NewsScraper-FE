@@ -86,6 +86,7 @@
 
 <script>
 import { exportFile } from 'quasar'
+import JSZip from 'jszip'
 // 格式化Csv值
 const wrapCsvValue = (val, formatFn) => {
   let formatted = formatFn !== undefined ? formatFn(val) : val
@@ -185,6 +186,7 @@ export default {
     },
     // 導出函數
     exportTable () {
+      const zip = new JSZip()
       const header = [this.resultColumns.map(col => wrapCsvValue(col.label))]
       const data = this.resultData.map(row => this.resultColumns.map(col => wrapCsvValue(
         typeof col.field === 'function'
@@ -200,12 +202,25 @@ export default {
         let content = []
         for (let i = 0; data.length > 0 && i < Math.floor(totalLength / this.outputlimit); ++i) { content.push(data.shift()) }
         content = header.concat(content).join('\r\n')
+        zip.file(`news-data-${count++}-${nowDateTime}.csv`, content)
+        // const status = exportFile(
+        //   `news-crawler-storage-export-${count++}-${nowDateTime}.csv`,
+        //   content,
+        //   'text/csv'
+        // )
+      }
+      zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: {
+          level: 9
+        }
+      }).then(content => {
         const status = exportFile(
-          `news-crawler-storage-export-${count++}-${nowDateTime}.csv`,
+          `news-crawler-storage-export-${nowDateTime}.zip`,
           content,
-          'text/csv'
+          'blob'
         )
-
         if (status !== true) {
           this.$q.notify({
             message: 'Browser denied file download...',
@@ -213,7 +228,7 @@ export default {
             icon: 'warning'
           })
         }
-      }
+      })
     }
   },
   mounted () {
