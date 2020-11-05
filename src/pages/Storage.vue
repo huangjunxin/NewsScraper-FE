@@ -62,21 +62,51 @@
           dense
           :data="resultData"
           :columns="resultColumns"
+          :visible-columns="visibleColumns"
           row-key="link-href"
         >
           <template v-slot:top-right>
-          <q-input
-            v-model="outputlimit"
-            label="導出條目限制 if 0 output all"
-            placeholder="0"
-          ></q-input>
-            <q-btn
-              color="primary"
-              icon-right="archive"
-              label="Export to csv"
-              no-caps
-              @click="exportTable"
-            />
+            <div class="row">
+              <div class="col">
+                <q-item-label header>Select Output / Display columns Below</q-item-label>
+                <q-toggle v-model="visibleColumns" val="date" label="Date" />
+                <q-toggle v-model="visibleColumns" val="name" label="News Name" />
+                <q-toggle v-model="visibleColumns" val="locale" label="Locale" />
+                <q-toggle v-model="visibleColumns" val="description" label="Description" />
+                <q-toggle v-model="visibleColumns" val="title" label="Title" />
+                <q-toggle v-model="visibleColumns" val="content" label="Content" />
+                <q-toggle v-model="visibleColumns" val="url" label="Url" />
+              </div>
+              <div class="col-4">
+                <q-item-label header class="q-gutter-xs">Select Output Type</q-item-label>
+                <q-btn-toggle
+                  v-model="outputType"
+                  no-caps
+                  rounded
+                  toggle-color="green"
+                  color="white"
+                  text-color="primary"
+                  :options="[
+                    {label: 'CSV', value: 'csv'},
+                    {label: 'TEXT', value: 'txt'}
+                  ]"
+                />
+                <div class="q-gutter-lg">
+                  <q-input
+                    v-model="outputlimit"
+                    label="導出條目限制 if 0 output all"
+                    placeholder="0"
+                  />
+                <q-btn
+                  color="primary"
+                  icon-right="archive"
+                  label="Export to csv"
+                  no-caps
+                  @click="exportTable"
+                />
+                </div>
+              </div>
+            </div>
           </template>
         </q-table>
       </div>
@@ -105,6 +135,8 @@ export default {
       isSubmitDisabled: false,
       isResultShow: false,
       resultData: [],
+      outputType: 'csv',
+      visibleColumns: ['date', 'name', 'locale', 'description', 'title', 'content', 'url'],
       resultColumns: [
         {
           name: 'date',
@@ -187,13 +219,8 @@ export default {
     // 導出函數
     exportTable () {
       const zip = new JSZip()
-      const header = [this.resultColumns.map(col => wrapCsvValue(col.label))]
-      const data = this.resultData.map(row => this.resultColumns.map(col => wrapCsvValue(
-        typeof col.field === 'function'
-          ? col.field(row)
-          : row[col.field === undefined ? col.name : col.field],
-        col.format
-      )).join(','))
+      const header = [this.visibleColumns.map(col => wrapCsvValue(col))]
+      const data = this.resultData.map(row => this.visibleColumns.map(col => wrapCsvValue(row[col])).join(','))
       const totalLength = data.length
       const today = new Date()
       const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
@@ -201,19 +228,24 @@ export default {
       while (data.length > 0) {
         let content = []
         for (let i = 0; data.length > 0 && i < Math.floor(totalLength / this.outputlimit); ++i) { content.push(data.shift()) }
-        content = header.concat(content).join('\r\n')
-        zip.file(`news-data-${count++}-${nowDateTime}.csv`, content)
-        // const status = exportFile(
-        //   `news-crawler-storage-export-${count++}-${nowDateTime}.csv`,
-        //   content,
-        //   'text/csv'
-        // )
+        switch (this.outputType) {
+          case 'csv':
+            content = header.concat(content).join('\r\n')
+            break
+          case 'txt':
+            content = content.join('\r\n')
+            break
+          default:
+            content = header.concat(content).join('\r\n')
+            break
+        }
+        zip.file(`news-data-${count++}-${nowDateTime}.` + this.outputType, content)
       }
       zip.generateAsync({
         type: 'blob',
         compression: 'DEFLATE',
         compressionOptions: {
-          level: 9
+          level: 6
         }
       }).then(content => {
         const status = exportFile(
