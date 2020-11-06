@@ -77,7 +77,7 @@
                 <q-toggle v-model="visibleColumns" val="content" label="Content" />
                 <q-toggle v-model="visibleColumns" val="url" label="Url" />
               </div>
-              <div class="col-4">
+              <div class="col-5">
                 <q-item-label header class="q-gutter-xs">Select Output Type</q-item-label>
                 <q-btn-toggle
                   v-model="outputType"
@@ -97,13 +97,23 @@
                     label="導出條目限制 if 0 output all"
                     placeholder="0"
                   />
-                <q-btn
-                  color="primary"
-                  icon-right="archive"
-                  label="Export to csv"
-                  no-caps
-                  @click="exportTable"
-                />
+                  <q-btn
+                    color="primary"
+                    icon-right="archive"
+                    label="Export to csv"
+                    no-caps
+                    @click="exportTable"
+                  />
+                  <q-circular-progress
+                      v-if="isShowProgress"
+                      show-value
+                      font-size="14px"
+                      :value="progress"
+                      size="40px"
+                      :thickness="0.32"
+                      color="teal"
+                      track-color="grey-3"
+                  />
                 </div>
               </div>
             </div>
@@ -136,6 +146,8 @@ export default {
       isResultShow: false,
       resultData: [],
       outputType: 'csv',
+      progress: 0,
+      isShowProgress: false,
       visibleColumns: ['date', 'name', 'locale', 'description', 'title', 'content', 'url'],
       resultColumns: [
         {
@@ -218,6 +230,7 @@ export default {
     },
     // 導出函數
     exportTable () {
+      this.isShowProgress = true
       const zip = new JSZip()
       const header = [this.visibleColumns.map(col => wrapCsvValue(col))]
       const data = this.resultData.map(row => this.visibleColumns.map(col => wrapCsvValue(row[col])).join(','))
@@ -225,9 +238,9 @@ export default {
       const today = new Date()
       const nowDateTime = `${today.getFullYear()}${today.getMonth()}${today.getDate()}-${today.getHours()}${today.getMinutes()}${today.getSeconds()}`
       let count = 0
+      const jump = Math.floor(totalLength / this.outputlimit)
       while (data.length > 0) {
-        let content = []
-        for (let i = 0; data.length > 0 && i < Math.floor(totalLength / this.outputlimit); ++i) { content.push(data.shift()) }
+        let content = data.splice(0, jump)
         switch (this.outputType) {
           case 'csv':
             content = header.concat(content).join('\r\n')
@@ -240,12 +253,14 @@ export default {
             break
         }
         zip.file(`news-data-${count++}-${nowDateTime}.` + this.outputType, content)
+        this.progress = (1 - data.length / this.resultData.length).toFixed(2) * 80
       }
+      this.progress = 90
       zip.generateAsync({
         type: 'blob',
         compression: 'DEFLATE',
         compressionOptions: {
-          level: 6
+          level: 5
         }
       }).then(content => {
         const status = exportFile(
@@ -253,6 +268,10 @@ export default {
           content,
           'blob'
         )
+        this.progress = 100
+        setTimeout(() => {
+          this.isShowProgress = false
+        }, 2000)
         if (status !== true) {
           this.$q.notify({
             message: 'Browser denied file download...',
