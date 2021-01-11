@@ -1,6 +1,6 @@
 # News Scraper (front-end)
 
-A crawler for some news sites and forums written in Chinese or Cantonese
+A crawler for some news sites and forums written in Chinese
 
 This is the repo of the front-end programme
 
