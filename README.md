@@ -1,6 +1,10 @@
-# Scraper News (scraper_news)
+# News Scraper (front-end)
 
-A news scraper
+A crawler for some news sites and forums written in Chinese or Cantonese
+
+This is the repo of the front-end programme
+
+Rear-end repo: https://github.com/ZenamLeong/news-scraper
 
 ## Install the dependencies
 ```bash
