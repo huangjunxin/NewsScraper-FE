@@ -122,7 +122,7 @@ export default {
       ],
       engineModel: 'bing',
       engineOptions: [
-        'duckduckgo', 'bing'
+        'duckduckgo', 'bing', 'bing_slow'
       ],
       isSubmitDisabled: false,
       isResultUrlsShow: false,

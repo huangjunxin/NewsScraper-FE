@@ -6,6 +6,8 @@ This is the repo of the front-end programme
 
 Rear-end repo: https://github.com/ZenamLeong/news-scraper
 
+need  to `npm install -g @quasar/cli@1.0.7`
+
 ## Install the dependencies
 ```bash
 npm install
@@ -22,6 +24,7 @@ npm run lint
 ```
 
 ### Build the app for production
+
 ```bash
 quasar build
 ```
